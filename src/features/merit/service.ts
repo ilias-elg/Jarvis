@@ -72,10 +72,10 @@ export function assertNotProtectedOwner(
     );
 }
 
-/** Bonus awards and removals both use the same 0.1–7 range. */
+/** Bonus awards and removals both use the same 0.1–50 range. */
 export function assertValidAmount(amount: number): void {
-  if (!amount || amount < 0.1 || amount > 7)
-    throw new MeritError("Amount must be between 0.1 and 7.");
+  if (!amount || amount < 0.1 || amount > 50)
+    throw new MeritError("Amount must be between 0.1 and 50.");
 }
 
 export type Recipient = { id: string; tag: string };
