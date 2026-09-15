@@ -23,6 +23,14 @@ export const addMeritCommand = new SlashCommandBuilder()
         )
         .setRequired(true),
     )
+    .addStringOption((o) =>
+      o
+        .setName("proof")
+        .setDescription(
+          "Message link to the proof (right-click the message → Copy Message Link).",
+        )
+        .setRequired(true),
+    )
     .addUserOption((o) =>
       o
         .setName("host")
@@ -41,6 +49,14 @@ export const addMeritCommand = new SlashCommandBuilder()
           .setName("announcement")
           .setDescription(
             "Paste the full event conclusion — Jarvis extracts every @mention automatically.",
+          )
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("proof")
+          .setDescription(
+            "Message link to the proof (right-click the message → Copy Message Link).",
           )
           .setRequired(true),
       )
@@ -65,6 +81,14 @@ export const addMeritCommand = new SlashCommandBuilder()
           )
           .setRequired(true),
       )
+      .addStringOption((o) =>
+        o
+          .setName("proof")
+          .setDescription(
+            "Message link to the proof (right-click the message → Copy Message Link).",
+          )
+          .setRequired(true),
+      )
       .addUserOption((o) =>
         o
           .setName("host")
@@ -76,7 +100,7 @@ export const addMeritCommand = new SlashCommandBuilder()
     sub
       .setName("bonus")
       .setDescription(
-        "Award 0.1–7 bonus merits to one or more members. Advisor and above only.",
+        "Award 0.1–50 bonus merits to one or more members. Advisor and above only.",
       )
       .addStringOption((o) =>
         o
@@ -87,9 +111,9 @@ export const addMeritCommand = new SlashCommandBuilder()
       .addNumberOption((o) =>
         o
           .setName("amount")
-          .setDescription("Merit amount (0.1–7).")
+          .setDescription("Merit amount (0.1–50).")
           .setMinValue(0.1)
-          .setMaxValue(7)
+          .setMaxValue(50)
           .setRequired(true),
       ),
   );
@@ -106,9 +130,9 @@ export const removeMeritCommand = new SlashCommandBuilder()
   .addNumberOption((o) =>
     o
       .setName("amount")
-      .setDescription("Merit amount to remove (0.1–7).")
+      .setDescription("Merit amount to remove (0.1–50).")
       .setMinValue(0.1)
-      .setMaxValue(7)
+      .setMaxValue(50)
       .setRequired(true),
   )
   .addStringOption((o) =>
