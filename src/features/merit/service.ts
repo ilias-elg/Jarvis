@@ -221,6 +221,7 @@ export async function auditAward(
   amount: number,
   meritType: string,
   actorTag: string,
+  proofUrl?: string,
 ): Promise<void> {
   const channel = await fetchLogChannel(client);
   if (!channel) return;
@@ -242,9 +243,13 @@ export async function auditAward(
       },
       { name: "TYPE", value: meritType, inline: true },
       { name: "AUTHORIZED BY", value: actorTag },
-    )
-    .setFooter({ text: "FIRE NATION • OWNER AUDIT CHANNEL" })
-    .setTimestamp();
+    );
+
+  if (proofUrl) {
+    embed.addFields({ name: "PROOF", value: proofUrl, inline: false });
+  }
+
+  embed.setFooter({ text: "FIRE NATION • OWNER AUDIT CHANNEL" }).setTimestamp();
 
   await channel
     .send({ embeds: [embed] })

@@ -24,6 +24,7 @@ import {
   assertCanRemove,
   assertCanViewHistory,
   assertNotProtectedOwner,
+  assertValidAmount,
   auditAward,
   auditRemoval,
   auditReset,
@@ -50,7 +51,7 @@ export function extractMentionIds(text: string): string[] {
 
 /** True only for a real Discord message link (channels/<guild>/<channel>/<message>). */
 export function isDiscordMessageLink(url: string): boolean {
-  return /^https:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/channels\/\d+\/\d+\/\d+$/.test(
+  return /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/channels\/(?:\d+|@me)\/\d+\/\d+\/?(?:\?.*)?$/.test(
     url.trim(),
   );
 }
@@ -87,6 +88,8 @@ export async function handleAddMerit(
     if (meritType === "bonus") {
       const usersRaw = interaction.options.getString("users", true);
       const amount = interaction.options.getNumber("amount", true);
+      assertValidAmount(amount);
+
       const mentionIds = extractMentionIds(usersRaw);
       if (mentionIds.length === 0) {
         throw new MeritError(
@@ -141,11 +144,11 @@ export async function handleAddMerit(
     // exam / event / raid — extract @mentions + explicit host + proof link
     const announcement = interaction.options.getString("announcement", true);
     const hostUser = interaction.options.getUser("host", true);
-    const proof = interaction.options.getString("proof", true);
+    const proof = interaction.options.getString("proof", true).trim();
 
     if (!isDiscordMessageLink(proof)) {
       throw new MeritError(
-        "Proof must be a Discord message link (right-click the message → Copy Message Link).",
+        "Invalid proof URL. Please provide a valid Discord message link (e.g. https://discord.com/channels/<guild_id>/<channel_id>/<message_id>).",
       );
     }
 
@@ -201,6 +204,7 @@ export async function handleAddMerit(
       amount,
       label,
       interaction.user.tag,
+      proof,
     );
 
     const skipped = mentionIds.length - mentioned.length;
@@ -209,7 +213,7 @@ export async function handleAddMerit(
         ? ` (${skipped} mention${skipped === 1 ? "" : "s"} not found in server — skipped)`
         : "";
     await interaction.editReply(
-      `Recorded **+${amount}** ${label} merit${amount === 1 ? "" : "s"} for **${allMembers.length}** member${allMembers.length === 1 ? "" : "s"} (Host: ${hostMember.user.tag})${skippedNote} — logged for owners.`,
+      `Recorded **+${amount}** ${label} merit${amount === 1 ? "" : "s"} for **${allMembers.length}** member${allMembers.length === 1 ? "" : "s"} (Host: ${hostMember.user.tag})${skippedNote} — logged for owners.\n• **Proof:** <${proof}>`,
     );
   } catch (error) {
     const message =
@@ -251,6 +255,7 @@ export async function handleRemoveMerit(
     const actorRank = getActorRank(member);
 
     assertCanRemove(actorRank);
+    assertValidAmount(amount);
     assertNotProtectedOwner(actorRank, targetUser.id);
 
     const targetMember = await interaction.guild.members.fetch(targetUser.id);
@@ -327,6 +332,103 @@ export function buildLeaderboardButtons(
   return new ActionRowBuilder<ButtonBuilder>().addComponents(prev, next);
 }
 
+export async function sendPaginatedLeaderboard(
+  interaction: ChatInputCommandInteraction,
+  rows: ReadonlyArray<LeaderboardRow>,
+): Promise<void> {
+  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
+  let page = 0;
+
+  const reply = await interaction.editReply({
+    embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
+    components: totalPages > 1 ? [buildLeaderboardButtons(page, totalPages)] : [],
+  });
+
+  if (totalPages <= 1) return;
+
+  const collector = reply.createMessageComponentCollector({
+    componentType: Button,
+    filter: (i) =>
+      i.user.id === interaction.user.id &&
+      (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
+    time: 5 * 60_000,
+  });
+
+  collector.on("collect", async (btn) => {
+    if (btn.customId === "leaderboard_next") {
+      page = Math.min(totalPages - 1, page + 1);
+    } else {
+      page = Math.max(0, page - 1);
+    }
+    await btn
+      .update({
+        embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
+        components: [buildLeaderboardButtons(page, totalPages)],
+      })
+      .catch(() => null);
+  });
+
+  collector.on("end", async () => {
+    await interaction.editReply({ components: [] }).catch(() => null);
+  });
+}
+
+export async function handleMerits(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This command can only be used inside a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const target = interaction.options.getUser("user");
+  if (!target) {
+    const rows = await getLeaderboard();
+    if (rows.length === 0) {
+      await interaction.editReply("No merit data recorded yet.");
+      return;
+    }
+    await sendPaginatedLeaderboard(interaction, rows);
+    return;
+  }
+
+  const total = await getMemberTotal(target.id);
+  const embed = new EmbedBuilder()
+    .setTitle("JARVIS // MERIT INQUIRY")
+    .setDescription(`**PERSONNEL:** ${target.tag}\n**RECORDED MERIT TOTAL:** **${total}**`)
+    .setColor(FIRE_RED)
+    .setFooter({ text: "FIRE NATION • MERIT SYSTEM • VERIFIED DATA" })
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
+export async function handleLeaderboard(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This command can only be used inside a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const rows = await getLeaderboard();
+  if (rows.length === 0) {
+    await interaction.editReply("No merit data recorded yet.");
+    return;
+  }
+  await sendPaginatedLeaderboard(interaction, rows);
+}
+
 export const MERIT_HISTORY_PAGE_SIZE = 10;
 
 export function buildMeritHistoryPageEmbed(
@@ -337,10 +439,13 @@ export function buildMeritHistoryPageEmbed(
 ): EmbedBuilder {
   const start = page * MERIT_HISTORY_PAGE_SIZE;
   const pageRows = rows.slice(start, start + MERIT_HISTORY_PAGE_SIZE);
-  const lines = pageRows.map(
-    (a) =>
-      `**${a.amount > 0 ? "+" : ""}${a.amount}**  •  [Proof of action](${a.proofUrl})  •  <t:${Math.floor(a.createdAt.getTime() / 1000)}:R>`,
-  );
+  const lines = pageRows.map((a) => {
+    const isUrl = /^https?:\/\//i.test(a.proofUrl.trim());
+    const proofLink = isUrl
+      ? `[Proof of action](${a.proofUrl.trim()})`
+      : a.proofUrl;
+    return `**${a.amount > 0 ? "+" : ""}${a.amount}**  •  ${proofLink}  •  <t:${Math.floor(a.createdAt.getTime() / 1000)}:R>`;
+  });
   return new EmbedBuilder()
     .setTitle("JARVIS // MERIT HISTORY")
     .setDescription(`**PERSONNEL:** ${targetTag}\n\n${lines.join("\n")}`)
@@ -413,109 +518,6 @@ export async function sendPaginatedMeritHistory(
   collector.on("end", async () => {
     await interaction.editReply({ components: [] }).catch(() => null);
   });
-}
-
-export async function sendPaginatedLeaderboard(
-  interaction: ChatInputCommandInteraction,
-  rows: ReadonlyArray<LeaderboardRow>,
-): Promise<void> {
-  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
-  let page = 0;
-
-  const reply = await interaction.editReply({
-    embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
-    components: totalPages > 1 ? [buildLeaderboardButtons(page, totalPages)] : [],
-  });
-
-  if (totalPages <= 1) return;
-
-  const collector = reply.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    filter: (i) =>
-      i.user.id === interaction.user.id &&
-      (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
-    time: 5 * 60_000,
-  });
-
-  collector.on("collect", async (btn) => {
-    if (btn.customId === "leaderboard_next") {
-      page = Math.min(totalPages - 1, page + 1);
-    } else {
-      page = Math.max(0, page - 1);
-    }
-    await btn
-      .update({
-        embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
-        components: [buildLeaderboardButtons(page, totalPages)],
-      })
-      .catch(() => null);
-  });
-
-  collector.on("end", async () => {
-    await interaction.editReply({ components: [] }).catch(() => null);
-  });
-}
-
-export async function handleMerits(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
-  if (!interaction.guild) {
-    await interaction.reply({
-      content: "This command can only be used inside a server.",
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await interaction.deferReply();
-  const target = interaction.options.getUser("user");
-
-  if (target) {
-    const total = await getMemberTotal(target.id);
-    const embed = new EmbedBuilder()
-      .setTitle("JARVIS // PERSONNEL MERIT RECORD")
-      .setDescription("Current standing for the selected personnel.")
-      .setColor(FIRE_RED)
-      .addFields(
-        { name: "PERSONNEL", value: target.tag, inline: true },
-        { name: "TOTAL MERITS", value: `**${total}**`, inline: true },
-      )
-      .setFooter({ text: "FIRE NATION • MERIT SYSTEM" })
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
-    return;
-  }
-
-  const leaderboard = await getLeaderboard();
-  if (leaderboard.length === 0) {
-    await interaction.editReply("No merits have been recorded yet.");
-    return;
-  }
-
-  await sendPaginatedLeaderboard(interaction, leaderboard);
-}
-
-export async function handleLeaderboard(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
-  if (!interaction.guild) {
-    await interaction.reply({
-      content: "This command can only be used inside a server.",
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await interaction.deferReply();
-
-  const leaderboard = await getLeaderboard();
-  if (leaderboard.length === 0) {
-    await interaction.editReply("No merits have been recorded yet.");
-    return;
-  }
-
-  await sendPaginatedLeaderboard(interaction, leaderboard);
 }
 
 export async function handleMeritHistory(

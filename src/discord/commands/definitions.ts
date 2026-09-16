@@ -15,29 +15,27 @@ export const addMeritCommand = new SlashCommandBuilder()
       .setDescription(
         "Award 1 merit to all participants. Paste the conclusion announcement.",
       )
-    .addStringOption((o) =>
-      o
-        .setName("announcement")
-        .setDescription(
-          "Paste the full exam conclusion — Jarvis extracts every @mention automatically.",
-        )
-        .setRequired(true),
-    )
-    .addStringOption((o) =>
-      o
-        .setName("proof")
-        .setDescription(
-          "Message link to the proof (right-click the message → Copy Message Link).",
-        )
-        .setRequired(true),
-    )
-    .addUserOption((o) =>
-      o
-        .setName("host")
-        .setDescription("The host who ran this exam — receives the merit.")
-        .setRequired(true),
-    ),
-    )
+      .addStringOption((o) =>
+        o
+          .setName("announcement")
+          .setDescription(
+            "Paste the full exam conclusion — Jarvis extracts every @mention automatically.",
+          )
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("proof")
+          .setDescription("Discord message link as proof")
+          .setRequired(true),
+      )
+      .addUserOption((o) =>
+        o
+          .setName("host")
+          .setDescription("The host who ran this exam — receives the merit.")
+          .setRequired(true),
+      ),
+  )
   .addSubcommand((sub) =>
     sub
       .setName("event")
@@ -55,9 +53,7 @@ export const addMeritCommand = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("proof")
-          .setDescription(
-            "Message link to the proof (right-click the message → Copy Message Link).",
-          )
+          .setDescription("Discord message link as proof")
           .setRequired(true),
       )
       .addUserOption((o) =>
@@ -84,9 +80,7 @@ export const addMeritCommand = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("proof")
-          .setDescription(
-            "Message link to the proof (right-click the message → Copy Message Link).",
-          )
+          .setDescription("Discord message link as proof")
           .setRequired(true),
       )
       .addUserOption((o) =>

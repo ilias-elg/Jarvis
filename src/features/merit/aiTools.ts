@@ -35,7 +35,7 @@ export const meritToolDefs = [
     function: {
       name: "award_merit",
       description:
-        "Awards merits to one or more members. Use type 'bonus' for one or more named members, each receiving the same 0.1-7 amount (Advisor+ only); use 'exam'/'event' (HR+) or 'raid' (Advisor+ only) with a required host — the person who receives the merit for running it — plus any participant usernames.",
+        "Awards merits to one or more members. Use type 'bonus' for one or more named members, each receiving the same 0.1-50 amount (Advisor+ only); use 'exam'/'event' (HR+) or 'raid' (Advisor+ only) with a required host — the person who receives the merit for running it — plus any participant usernames.",
       parameters: {
         type: "object",
         properties: {
@@ -56,7 +56,7 @@ export const meritToolDefs = [
           },
           amount: {
             type: "number",
-            description: "Required only for 'bonus' — amount between 0.1 and 7.",
+            description: "Required only for 'bonus' — amount between 0.1 and 50.",
           },
         },
         required: ["merit_type", "usernames"],
@@ -73,7 +73,7 @@ export const meritToolDefs = [
         type: "object",
         properties: {
           username: { type: "string" },
-          amount: { type: "number", description: "0.1-7" },
+          amount: { type: "number", description: "0.1-50" },
           reason: { type: "string" },
         },
         required: ["username", "amount", "reason"],

@@ -60,11 +60,11 @@ export const COMMAND_GUIDE: Record<
     },
     {
       command: "/addmerit bonus",
-      desc: "Award 0.1–7 bonus merits to one or more members.",
+      desc: "Award 0.1–50 bonus merits to one or more members.",
     },
     {
       command: "/removemerit",
-      desc: "Deduct merits from a member (0.1–7) with a required reason, logged for owners.",
+      desc: "Deduct merits from a member (0.1–50) with a required reason, logged for owners.",
     },
   ],
   royalty: [
@@ -99,12 +99,12 @@ export const CONVO_TOOL_GUIDE: Record<
   owner: [
     {
       tool: "reset_merit_data",
-      desc: "Wipe all merit data (destructive, requires confirmation).",
+      desc: "Wipe all merit data after backup (destructive).",
     },
   ],
 };
 
-/** Builds a full, cumulative command guide for the given tier (e.g. "advisor" includes member + hr + advisor). */
+/** Builds the formatted guide for every command up to and including the caller's tier. */
 export function buildCommandGuide(tier: CommandGuideTier): string {
   const tiersToInclude = GUIDE_TIER_ORDER.slice(
     0,
