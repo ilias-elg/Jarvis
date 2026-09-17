@@ -4,6 +4,7 @@ import type {
 } from "discord.js";
 import {
   handleAddMerit,
+  handleAddMeritStandalone,
   handleLeaderboard,
   handleMeritHistory,
   handleMerits,
@@ -31,6 +32,10 @@ export const COMMAND_HANDLERS: Record<
   (interaction: ChatInputCommandInteraction) => Promise<void>
 > = {
   addmerit: handleAddMerit,
+  addmeritexam: handleAddMeritStandalone,
+  addmeritevent: handleAddMeritStandalone,
+  addmeritraid: handleAddMeritStandalone,
+  addbonusmerit: handleAddMeritStandalone,
   removemerit: handleRemoveMerit,
   merits: handleMerits,
   merithistory: handleMeritHistory,

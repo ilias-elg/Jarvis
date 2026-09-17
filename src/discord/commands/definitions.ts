@@ -112,6 +112,91 @@ export const addMeritCommand = new SlashCommandBuilder()
       ),
   );
 
+// ─── Standalone commands (/addmeritexam, /addmeritevent, /addmeritraid, /addbonusmerit) ─
+export const addMeritExamCommand = new SlashCommandBuilder()
+  .setName("addmeritexam")
+  .setDescription("Award 1 merit to all participants. Paste the conclusion announcement.")
+  .addStringOption((o) =>
+    o
+      .setName("announcement")
+      .setDescription("Paste the full exam conclusion — Jarvis extracts every @mention automatically.")
+      .setRequired(true),
+  )
+  .addUserOption((o) =>
+    o
+      .setName("host")
+      .setDescription("The host who ran this exam — receives the merit.")
+      .setRequired(true),
+  )
+  .addStringOption((o) =>
+    o
+      .setName("proof")
+      .setDescription("Discord message link as proof")
+      .setRequired(true),
+  );
+
+export const addMeritEventCommand = new SlashCommandBuilder()
+  .setName("addmeritevent")
+  .setDescription("Award 1 merit to all participants. Paste the conclusion announcement.")
+  .addStringOption((o) =>
+    o
+      .setName("announcement")
+      .setDescription("Paste the full event conclusion — Jarvis extracts every @mention automatically.")
+      .setRequired(true),
+  )
+  .addUserOption((o) =>
+    o
+      .setName("host")
+      .setDescription("The host who ran this event — receives the merit.")
+      .setRequired(true),
+  )
+  .addStringOption((o) =>
+    o
+      .setName("proof")
+      .setDescription("Discord message link as proof")
+      .setRequired(true),
+  );
+
+export const addMeritRaidCommand = new SlashCommandBuilder()
+  .setName("addmeritraid")
+  .setDescription("Award 3 merits to all participants. Advisor and above only.")
+  .addStringOption((o) =>
+    o
+      .setName("announcement")
+      .setDescription("Paste the full raid conclusion — Jarvis extracts every @mention automatically.")
+      .setRequired(true),
+  )
+  .addUserOption((o) =>
+    o
+      .setName("host")
+      .setDescription("The host who led this raid — receives the merit.")
+      .setRequired(true),
+  )
+  .addStringOption((o) =>
+    o
+      .setName("proof")
+      .setDescription("Discord message link as proof")
+      .setRequired(true),
+  );
+
+export const addBonusMeritCommand = new SlashCommandBuilder()
+  .setName("addbonusmerit")
+  .setDescription("Award 0.1–50 bonus merits to one or more members. Advisor and above only.")
+  .addStringOption((o) =>
+    o
+      .setName("users")
+      .setDescription("@mention one or more members to award, e.g. @Alice @Bob.")
+      .setRequired(true),
+  )
+  .addNumberOption((o) =>
+    o
+      .setName("amount")
+      .setDescription("Merit amount (0.1–50).")
+      .setMinValue(0.1)
+      .setMaxValue(50)
+      .setRequired(true),
+  );
+
 export const removeMeritCommand = new SlashCommandBuilder()
   .setName("removemerit")
   .setDescription("Remove merits from a member. Advisor and above only.")
@@ -204,6 +289,10 @@ export const addKnowledgeCommand = new SlashCommandBuilder()
  */
 export const ALL_COMMANDS = [
   addMeritCommand,
+  addMeritExamCommand,
+  addMeritEventCommand,
+  addMeritRaidCommand,
+  addBonusMeritCommand,
   removeMeritCommand,
   meritsCommand,
   historyCommand,

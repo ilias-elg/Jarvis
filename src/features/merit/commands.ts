@@ -56,10 +56,32 @@ export function isDiscordMessageLink(url: string): boolean {
   );
 }
 
-// ─── /addmerit, /removemerit ────────────────────────────────────────────────
+// ─── /addmerit, /addmeritexam, /addmeritevent, /addmeritraid, /addbonusmerit, /removemerit ───
 
 export async function handleAddMerit(
   interaction: ChatInputCommandInteraction,
+): Promise<void> {
+  const meritType = interaction.options.getSubcommand() as MeritType;
+  return executeAddMerit(interaction, meritType);
+}
+
+export async function handleAddMeritStandalone(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
+  const typeMap: Record<string, MeritType> = {
+    addmeritexam: "exam",
+    addmeritevent: "event",
+    addmeritraid: "raid",
+    addbonusmerit: "bonus",
+  };
+  const meritType = typeMap[interaction.commandName];
+  if (!meritType) return;
+  return executeAddMerit(interaction, meritType);
+}
+
+async function executeAddMerit(
+  interaction: ChatInputCommandInteraction,
+  meritType: MeritType,
 ): Promise<void> {
   if (!interaction.guild) {
     await interaction.reply({
@@ -81,7 +103,6 @@ export async function handleAddMerit(
   await interaction.deferReply({ ephemeral: true });
 
   try {
-    const meritType = interaction.options.getSubcommand() as MeritType;
     const actorRank = getActorRank(member);
     assertCanAward(actorRank, meritType);
 

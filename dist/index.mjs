@@ -28428,7 +28428,7 @@ var require_pino = __commonJS({
     function pinoBundlerAbsolutePath(p) {
       try {
         const path2 = __require("path");
-        const outputDir = "C:\\jb-src\\dist";
+        const outputDir = "/app/dist";
         return path2.resolve(outputDir, p.replace(/^\.\//, ""));
       } catch (e) {
         const f = new Function("p", "return new URL(p, import.meta.url).pathname");
@@ -132903,6 +132903,8 @@ var addMeritCommand = new import_discord.SlashCommandBuilder().setName("addmerit
     (o) => o.setName("announcement").setDescription(
       "Paste the full exam conclusion \u2014 Jarvis extracts every @mention automatically."
     ).setRequired(true)
+  ).addStringOption(
+    (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
   ).addUserOption(
     (o) => o.setName("host").setDescription("The host who ran this exam \u2014 receives the merit.").setRequired(true)
   )
@@ -132913,6 +132915,8 @@ var addMeritCommand = new import_discord.SlashCommandBuilder().setName("addmerit
     (o) => o.setName("announcement").setDescription(
       "Paste the full event conclusion \u2014 Jarvis extracts every @mention automatically."
     ).setRequired(true)
+  ).addStringOption(
+    (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
   ).addUserOption(
     (o) => o.setName("host").setDescription("The host who ran this event \u2014 receives the merit.").setRequired(true)
   )
@@ -132923,22 +132927,50 @@ var addMeritCommand = new import_discord.SlashCommandBuilder().setName("addmerit
     (o) => o.setName("announcement").setDescription(
       "Paste the full raid conclusion \u2014 Jarvis extracts every @mention automatically."
     ).setRequired(true)
+  ).addStringOption(
+    (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
   ).addUserOption(
     (o) => o.setName("host").setDescription("The host who led this raid \u2014 receives the merit.").setRequired(true)
   )
 ).addSubcommand(
   (sub) => sub.setName("bonus").setDescription(
-    "Award 0.1\u20137 bonus merits to one or more members. Advisor and above only."
+    "Award 0.1\u201350 bonus merits to one or more members. Advisor and above only."
   ).addStringOption(
     (o) => o.setName("users").setDescription("@mention one or more members to award, e.g. @Alice @Bob.").setRequired(true)
   ).addNumberOption(
-    (o) => o.setName("amount").setDescription("Merit amount (0.1\u20137).").setMinValue(0.1).setMaxValue(7).setRequired(true)
+    (o) => o.setName("amount").setDescription("Merit amount (0.1\u201350).").setMinValue(0.1).setMaxValue(50).setRequired(true)
   )
+);
+var addMeritExamCommand = new import_discord.SlashCommandBuilder().setName("addmeritexam").setDescription("Award 1 merit to all participants. Paste the conclusion announcement.").addStringOption(
+  (o) => o.setName("announcement").setDescription("Paste the full exam conclusion \u2014 Jarvis extracts every @mention automatically.").setRequired(true)
+).addUserOption(
+  (o) => o.setName("host").setDescription("The host who ran this exam \u2014 receives the merit.").setRequired(true)
+).addStringOption(
+  (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
+);
+var addMeritEventCommand = new import_discord.SlashCommandBuilder().setName("addmeritevent").setDescription("Award 1 merit to all participants. Paste the conclusion announcement.").addStringOption(
+  (o) => o.setName("announcement").setDescription("Paste the full event conclusion \u2014 Jarvis extracts every @mention automatically.").setRequired(true)
+).addUserOption(
+  (o) => o.setName("host").setDescription("The host who ran this event \u2014 receives the merit.").setRequired(true)
+).addStringOption(
+  (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
+);
+var addMeritRaidCommand = new import_discord.SlashCommandBuilder().setName("addmeritraid").setDescription("Award 3 merits to all participants. Advisor and above only.").addStringOption(
+  (o) => o.setName("announcement").setDescription("Paste the full raid conclusion \u2014 Jarvis extracts every @mention automatically.").setRequired(true)
+).addUserOption(
+  (o) => o.setName("host").setDescription("The host who led this raid \u2014 receives the merit.").setRequired(true)
+).addStringOption(
+  (o) => o.setName("proof").setDescription("Discord message link as proof").setRequired(true)
+);
+var addBonusMeritCommand = new import_discord.SlashCommandBuilder().setName("addbonusmerit").setDescription("Award 0.1\u201350 bonus merits to one or more members. Advisor and above only.").addStringOption(
+  (o) => o.setName("users").setDescription("@mention one or more members to award, e.g. @Alice @Bob.").setRequired(true)
+).addNumberOption(
+  (o) => o.setName("amount").setDescription("Merit amount (0.1\u201350).").setMinValue(0.1).setMaxValue(50).setRequired(true)
 );
 var removeMeritCommand = new import_discord.SlashCommandBuilder().setName("removemerit").setDescription("Remove merits from a member. Advisor and above only.").addUserOption(
   (o) => o.setName("user").setDescription("The member to deduct merits from.").setRequired(true)
 ).addNumberOption(
-  (o) => o.setName("amount").setDescription("Merit amount to remove (0.1\u20137).").setMinValue(0.1).setMaxValue(7).setRequired(true)
+  (o) => o.setName("amount").setDescription("Merit amount to remove (0.1\u201350).").setMinValue(0.1).setMaxValue(50).setRequired(true)
 ).addStringOption(
   (o) => o.setName("reason").setDescription("Reason for the removal.").setRequired(true)
 );
@@ -132971,6 +133003,10 @@ var addKnowledgeCommand = new import_discord.SlashCommandBuilder().setName("addk
 );
 var ALL_COMMANDS = [
   addMeritCommand,
+  addMeritExamCommand,
+  addMeritEventCommand,
+  addMeritRaidCommand,
+  addBonusMeritCommand,
   removeMeritCommand,
   meritsCommand,
   historyCommand,
@@ -133055,8 +133091,8 @@ function assertNotProtectedOwner(actorRank, targetId) {
     );
 }
 function assertValidAmount(amount) {
-  if (!amount || amount < 0.1 || amount > 7)
-    throw new MeritError("Amount must be between 0.1 and 7.");
+  if (!amount || amount < 0.1 || amount > 50)
+    throw new MeritError("Amount must be between 0.1 and 50.");
 }
 async function recordAward(opts) {
   logger.info(
@@ -133142,7 +133178,7 @@ async function fetchLogChannel(client) {
   }
   return channel;
 }
-async function auditAward(client, recipients, amount, meritType, actorTag) {
+async function auditAward(client, recipients, amount, meritType, actorTag, proofUrl) {
   const channel = await fetchLogChannel(client);
   if (!channel) return;
   const memberLines = recipients.map((m) => `\u2022 ${m.tag} (${m.id}) \u2014 **+${amount}**`).join("\n");
@@ -133155,7 +133191,11 @@ async function auditAward(client, recipients, amount, meritType, actorTag) {
     },
     { name: "TYPE", value: meritType, inline: true },
     { name: "AUTHORIZED BY", value: actorTag }
-  ).setFooter({ text: "FIRE NATION \u2022 OWNER AUDIT CHANNEL" }).setTimestamp();
+  );
+  if (proofUrl) {
+    embed.addFields({ name: "PROOF", value: proofUrl, inline: false });
+  }
+  embed.setFooter({ text: "FIRE NATION \u2022 OWNER AUDIT CHANNEL" }).setTimestamp();
   await channel.send({ embeds: [embed] }).catch((e) => logger.error({ err: e }, "Merit award audit log send failed"));
   if (meritType === "Bonus" && amount > 3) {
     await channel.send({
@@ -133201,7 +133241,27 @@ function extractMentionIds(text2) {
   }
   return [...seen];
 }
+function isDiscordMessageLink(url2) {
+  return /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/channels\/(?:\d+|@me)\/\d+\/\d+\/?(?:\?.*)?$/.test(
+    url2.trim()
+  );
+}
 async function handleAddMerit(interaction) {
+  const meritType = interaction.options.getSubcommand();
+  return executeAddMerit(interaction, meritType);
+}
+async function handleAddMeritStandalone(interaction) {
+  const typeMap = {
+    addmeritexam: "exam",
+    addmeritevent: "event",
+    addmeritraid: "raid",
+    addbonusmerit: "bonus"
+  };
+  const meritType = typeMap[interaction.commandName];
+  if (!meritType) return;
+  return executeAddMerit(interaction, meritType);
+}
+async function executeAddMerit(interaction, meritType) {
   if (!interaction.guild) {
     await interaction.reply({
       content: "This command can only be used inside a server.",
@@ -133219,12 +133279,12 @@ async function handleAddMerit(interaction) {
   }
   await interaction.deferReply({ ephemeral: true });
   try {
-    const meritType = interaction.options.getSubcommand();
     const actorRank = getJarvisRank(member);
     assertCanAward(actorRank, meritType);
     if (meritType === "bonus") {
       const usersRaw = interaction.options.getString("users", true);
       const amount2 = interaction.options.getNumber("amount", true);
+      assertValidAmount(amount2);
       const mentionIds2 = extractMentionIds(usersRaw);
       if (mentionIds2.length === 0) {
         throw new MeritError(
@@ -133267,6 +133327,12 @@ async function handleAddMerit(interaction) {
     }
     const announcement = interaction.options.getString("announcement", true);
     const hostUser = interaction.options.getUser("host", true);
+    const proof = interaction.options.getString("proof", true).trim();
+    if (!isDiscordMessageLink(proof)) {
+      throw new MeritError(
+        "Invalid proof URL. Please provide a valid Discord message link (e.g. https://discord.com/channels/<guild_id>/<channel_id>/<message_id>)."
+      );
+    }
     const mentionIds = extractMentionIds(announcement);
     if (mentionIds.length === 0) {
       throw new MeritError(
@@ -133295,7 +133361,7 @@ async function handleAddMerit(interaction) {
       guildId: interaction.guild.id,
       recipients: allMembers.map((m) => ({ id: m.id, tag: m.user.tag })),
       amount,
-      proofUrl: announcement,
+      proofUrl: proof,
       awardedById: interaction.user.id,
       awardedByTag: interaction.user.tag
     });
@@ -133304,12 +133370,14 @@ async function handleAddMerit(interaction) {
       allMembers.map((m) => ({ id: m.id, tag: m.user.tag })),
       amount,
       label,
-      interaction.user.tag
+      interaction.user.tag,
+      proof
     );
     const skipped = mentionIds.length - mentioned.length;
     const skippedNote = skipped > 0 ? ` (${skipped} mention${skipped === 1 ? "" : "s"} not found in server \u2014 skipped)` : "";
     await interaction.editReply(
-      `Recorded **+${amount}** ${label} merit${amount === 1 ? "" : "s"} for **${allMembers.length}** member${allMembers.length === 1 ? "" : "s"} (Host: ${hostMember.user.tag})${skippedNote} \u2014 logged for owners.`
+      `Recorded **+${amount}** ${label} merit${amount === 1 ? "" : "s"} for **${allMembers.length}** member${allMembers.length === 1 ? "" : "s"} (Host: ${hostMember.user.tag})${skippedNote} \u2014 logged for owners.
+\u2022 **Proof:** <${proof}>`
     );
   } catch (error40) {
     const message = error40 instanceof Error ? error40.message : "The merit award failed.";
@@ -133343,6 +133411,7 @@ async function handleRemoveMerit(interaction) {
     const reason = interaction.options.getString("reason", true);
     const actorRank = getJarvisRank(member);
     assertCanRemove(actorRank);
+    assertValidAmount(amount);
     assertNotProtectedOwner(actorRank, targetUser.id);
     const targetMember = await interaction.guild.members.fetch(targetUser.id);
     await recordRemoval({
@@ -133390,13 +133459,83 @@ function buildLeaderboardButtons(page, totalPages) {
   const next = new import_discord3.ButtonBuilder().setCustomId("leaderboard_next").setLabel("Next \u25B6").setStyle(import_discord3.ButtonStyle.Secondary).setDisabled(page >= totalPages - 1);
   return new import_discord3.ActionRowBuilder().addComponents(prev, next);
 }
+async function sendPaginatedLeaderboard(interaction, rows) {
+  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
+  let page = 0;
+  const reply = await interaction.editReply({
+    embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
+    components: totalPages > 1 ? [buildLeaderboardButtons(page, totalPages)] : []
+  });
+  if (totalPages <= 1) return;
+  const collector = reply.createMessageComponentCollector({
+    componentType: Button,
+    filter: (i) => i.user.id === interaction.user.id && (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
+    time: 5 * 6e4
+  });
+  collector.on("collect", async (btn) => {
+    if (btn.customId === "leaderboard_next") {
+      page = Math.min(totalPages - 1, page + 1);
+    } else {
+      page = Math.max(0, page - 1);
+    }
+    await btn.update({
+      embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
+      components: [buildLeaderboardButtons(page, totalPages)]
+    }).catch(() => null);
+  });
+  collector.on("end", async () => {
+    await interaction.editReply({ components: [] }).catch(() => null);
+  });
+}
+async function handleMerits(interaction) {
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This command can only be used inside a server.",
+      ephemeral: true
+    });
+    return;
+  }
+  await interaction.deferReply({ ephemeral: true });
+  const target = interaction.options.getUser("user");
+  if (!target) {
+    const rows = await getLeaderboard();
+    if (rows.length === 0) {
+      await interaction.editReply("No merit data recorded yet.");
+      return;
+    }
+    await sendPaginatedLeaderboard(interaction, rows);
+    return;
+  }
+  const total = await getMemberTotal(target.id);
+  const embed = new import_discord3.EmbedBuilder().setTitle("JARVIS // MERIT INQUIRY").setDescription(`**PERSONNEL:** ${target.tag}
+**RECORDED MERIT TOTAL:** **${total}**`).setColor(FIRE_RED).setFooter({ text: "FIRE NATION \u2022 MERIT SYSTEM \u2022 VERIFIED DATA" }).setTimestamp();
+  await interaction.editReply({ embeds: [embed] });
+}
+async function handleLeaderboard(interaction) {
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This command can only be used inside a server.",
+      ephemeral: true
+    });
+    return;
+  }
+  await interaction.deferReply({ ephemeral: true });
+  const rows = await getLeaderboard();
+  if (rows.length === 0) {
+    await interaction.editReply("No merit data recorded yet.");
+    return;
+  }
+  await sendPaginatedLeaderboard(interaction, rows);
+}
 var MERIT_HISTORY_PAGE_SIZE = 10;
 function buildMeritHistoryPageEmbed(targetTag, rows, page, totalPages) {
   const start = page * MERIT_HISTORY_PAGE_SIZE;
   const pageRows = rows.slice(start, start + MERIT_HISTORY_PAGE_SIZE);
-  const lines = pageRows.map(
-    (a) => `**${a.amount > 0 ? "+" : ""}${a.amount}**  \u2022  [Proof of action](${a.proofUrl})  \u2022  <t:${Math.floor(a.createdAt.getTime() / 1e3)}:R>`
-  );
+  const lines = pageRows.map((a) => {
+    const isUrl = /^https?:\/\//i.test(a.proofUrl.trim());
+    const proofLink = isUrl ? `[Proof of action](${a.proofUrl.trim()})` : a.proofUrl;
+    return `**${a.amount > 0 ? "+" : ""}${a.amount}**  \u2022  ${proofLink}  \u2022  <t:${Math.floor(a.createdAt.getTime() / 1e3)}:R>`;
+  });
   return new import_discord3.EmbedBuilder().setTitle("JARVIS // MERIT HISTORY").setDescription(`**PERSONNEL:** ${targetTag}
 
 ${lines.join("\n")}`).setColor(FIRE_ORANGE).setFooter({
@@ -133438,76 +133577,6 @@ async function sendPaginatedMeritHistory(interaction, targetTag, rows) {
   collector.on("end", async () => {
     await interaction.editReply({ components: [] }).catch(() => null);
   });
-}
-async function sendPaginatedLeaderboard(interaction, rows) {
-  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
-  let page = 0;
-  const reply = await interaction.editReply({
-    embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
-    components: totalPages > 1 ? [buildLeaderboardButtons(page, totalPages)] : []
-  });
-  if (totalPages <= 1) return;
-  const collector = reply.createMessageComponentCollector({
-    componentType: import_discord3.ComponentType.Button,
-    filter: (i) => i.user.id === interaction.user.id && (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
-    time: 5 * 6e4
-  });
-  collector.on("collect", async (btn) => {
-    if (btn.customId === "leaderboard_next") {
-      page = Math.min(totalPages - 1, page + 1);
-    } else {
-      page = Math.max(0, page - 1);
-    }
-    await btn.update({
-      embeds: [buildLeaderboardPageEmbed(rows, page, totalPages)],
-      components: [buildLeaderboardButtons(page, totalPages)]
-    }).catch(() => null);
-  });
-  collector.on("end", async () => {
-    await interaction.editReply({ components: [] }).catch(() => null);
-  });
-}
-async function handleMerits(interaction) {
-  if (!interaction.guild) {
-    await interaction.reply({
-      content: "This command can only be used inside a server.",
-      ephemeral: true
-    });
-    return;
-  }
-  await interaction.deferReply();
-  const target = interaction.options.getUser("user");
-  if (target) {
-    const total = await getMemberTotal(target.id);
-    const embed = new import_discord3.EmbedBuilder().setTitle("JARVIS // PERSONNEL MERIT RECORD").setDescription("Current standing for the selected personnel.").setColor(FIRE_RED).addFields(
-      { name: "PERSONNEL", value: target.tag, inline: true },
-      { name: "TOTAL MERITS", value: `**${total}**`, inline: true }
-    ).setFooter({ text: "FIRE NATION \u2022 MERIT SYSTEM" }).setTimestamp();
-    await interaction.editReply({ embeds: [embed] });
-    return;
-  }
-  const leaderboard = await getLeaderboard();
-  if (leaderboard.length === 0) {
-    await interaction.editReply("No merits have been recorded yet.");
-    return;
-  }
-  await sendPaginatedLeaderboard(interaction, leaderboard);
-}
-async function handleLeaderboard(interaction) {
-  if (!interaction.guild) {
-    await interaction.reply({
-      content: "This command can only be used inside a server.",
-      ephemeral: true
-    });
-    return;
-  }
-  await interaction.deferReply();
-  const leaderboard = await getLeaderboard();
-  if (leaderboard.length === 0) {
-    await interaction.editReply("No merits have been recorded yet.");
-    return;
-  }
-  await sendPaginatedLeaderboard(interaction, leaderboard);
 }
 async function handleMeritHistory(interaction) {
   if (!interaction.guild) {
@@ -133867,6 +133936,10 @@ async function handleReloadKnowledge(interaction) {
 // src/discord/commands/router.ts
 var COMMAND_HANDLERS = {
   addmerit: handleAddMerit,
+  addmeritexam: handleAddMeritStandalone,
+  addmeritevent: handleAddMeritStandalone,
+  addmeritraid: handleAddMeritStandalone,
+  addbonusmerit: handleAddMeritStandalone,
   removemerit: handleRemoveMerit,
   merits: handleMerits,
   merithistory: handleMeritHistory,
@@ -150606,7 +150679,7 @@ var meritToolDefs = [
     type: "function",
     function: {
       name: "award_merit",
-      description: "Awards merits to one or more members. Use type 'bonus' for one or more named members, each receiving the same 0.1-7 amount (Advisor+ only); use 'exam'/'event' (HR+) or 'raid' (Advisor+ only) with a required host \u2014 the person who receives the merit for running it \u2014 plus any participant usernames.",
+      description: "Awards merits to one or more members. Use type 'bonus' for one or more named members, each receiving the same 0.1-50 amount (Advisor+ only); use 'exam'/'event' (HR+) or 'raid' (Advisor+ only) with a required host \u2014 the person who receives the merit for running it \u2014 plus any participant usernames.",
       parameters: {
         type: "object",
         properties: {
@@ -150625,7 +150698,7 @@ var meritToolDefs = [
           },
           amount: {
             type: "number",
-            description: "Required only for 'bonus' \u2014 amount between 0.1 and 7."
+            description: "Required only for 'bonus' \u2014 amount between 0.1 and 50."
           }
         },
         required: ["merit_type", "usernames"]
@@ -150641,7 +150714,7 @@ var meritToolDefs = [
         type: "object",
         properties: {
           username: { type: "string" },
-          amount: { type: "number", description: "0.1-7" },
+          amount: { type: "number", description: "0.1-50" },
           reason: { type: "string" }
         },
         required: ["username", "amount", "reason"]
