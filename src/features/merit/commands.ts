@@ -368,14 +368,20 @@ export async function sendPaginatedLeaderboard(
   if (totalPages <= 1) return;
 
   const collector = reply.createMessageComponentCollector({
-    componentType: Button,
+    componentType: ComponentType.Button,
     filter: (i) =>
-      i.user.id === interaction.user.id &&
-      (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
+      i.customId === "leaderboard_prev" || i.customId === "leaderboard_next",
     time: 5 * 60_000,
   });
 
   collector.on("collect", async (btn) => {
+    if (btn.user.id !== interaction.user.id) {
+      await btn.reply({
+        content: "Only the user who ran /leaderboard can control these pages. Run /leaderboard yourself to browse.",
+        ephemeral: true,
+      });
+      return;
+    }
     if (btn.customId === "leaderboard_next") {
       page = Math.min(totalPages - 1, page + 1);
     } else {
@@ -405,7 +411,7 @@ export async function handleMerits(
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const target = interaction.options.getUser("user");
   if (!target) {
@@ -440,7 +446,7 @@ export async function handleLeaderboard(
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const rows = await getLeaderboard();
   if (rows.length === 0) {

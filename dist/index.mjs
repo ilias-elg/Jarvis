@@ -133468,11 +133468,18 @@ async function sendPaginatedLeaderboard(interaction, rows) {
   });
   if (totalPages <= 1) return;
   const collector = reply.createMessageComponentCollector({
-    componentType: Button,
-    filter: (i) => i.user.id === interaction.user.id && (i.customId === "leaderboard_prev" || i.customId === "leaderboard_next"),
+    componentType: import_discord3.ComponentType.Button,
+    filter: (i) => i.customId === "leaderboard_prev" || i.customId === "leaderboard_next",
     time: 5 * 6e4
   });
   collector.on("collect", async (btn) => {
+    if (btn.user.id !== interaction.user.id) {
+      await btn.reply({
+        content: "Only the user who ran /leaderboard can control these pages. Run /leaderboard yourself to browse.",
+        ephemeral: true
+      });
+      return;
+    }
     if (btn.customId === "leaderboard_next") {
       page = Math.min(totalPages - 1, page + 1);
     } else {
@@ -133495,7 +133502,7 @@ async function handleMerits(interaction) {
     });
     return;
   }
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
   const target = interaction.options.getUser("user");
   if (!target) {
     const rows = await getLeaderboard();
@@ -133519,7 +133526,7 @@ async function handleLeaderboard(interaction) {
     });
     return;
   }
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
   const rows = await getLeaderboard();
   if (rows.length === 0) {
     await interaction.editReply("No merit data recorded yet.");
